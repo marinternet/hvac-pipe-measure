@@ -1,0 +1,5 @@
+# ignore Yolo Model folder
+Yolo Model/
+
+#ignore virtual environment folder
+yolo_test_env/

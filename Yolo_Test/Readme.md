@@ -20,30 +20,16 @@ Before running the program, ensure you have the following installed:
 
     Note: if you already cloned, then ignore the git clone command
 
-2.  **Set up a Virtual Environment** (Recommended):
-    ```bash
-    # Windows
-    python -m venv yolo_test_env
-    yolo_test_env\Scripts\activate  # activate environment yolo_test_env
-    ```
-
-3.  **Install Dependencies**:
+2.  **Install Dependencies**:
     Use the provided `requirements.txt` file to install the necessary libraries.
     ```bash
     pip install -r requirements.txt
     ```
 
-**Optional** (Windows):
-    if you still difficult following the step, you can click and running `setup_run_test.bat` file and select `1`
-    to setup virtual environment easily
-
 ## 🚀 Usage
 
-To start the detection program, run the Python script:
+To start the detection test program, run the Python script:
 
 ```bash
 python Test_Model.py
 ```
-
-**Optional** (Windows):
-    or you can click and running `setup_run_test.bat` file and select `2` to running python script easily

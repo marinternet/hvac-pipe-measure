@@ -1,4 +1,4 @@
-from email.mime import base
+import questionary                              # use for interactive menu
 import tkinter as tk                            # use for dialog box
 from tkinter.filedialog import askopenfilename  # use for open file dialog box
 import cv2                                      # use for computer vision
@@ -15,7 +15,8 @@ def load_or_download_yolo_model(model_name):
     If not, download it, move it to the specified directory, and then load it.
     """
     # 1. Specify the directory where the model will be saved
-    model_dir = r'Yolo Model'
+    # note: use absolute path to avoid path issue when running another command line
+    model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), r'Yolo Model')
     local_path = os.path.join(model_dir, model_name)
 
     # 2. Check if the model file already exists in the target folder
@@ -51,11 +52,18 @@ def load_or_download_yolo_model(model_name):
     return model
 
 # support function to decide download model
-def decide_download_model(user_choice):
+def decide_download_model(status_model_dir):
     """
     Decide whether to download a YOLO model based on user input.
     """
     while True:
+
+        # ask user to download model or not
+        if status_model_dir == True:
+            user_choice = input("Do you want to download another model? (y/n): ").strip().lower()
+        else:
+            user_choice = input("no model found. Do you want to download a model? (y/n): ").strip().lower()
+
         if user_choice == 'y':
             model_name = input("Enter the YOLO model name to download (e.g., yolo12n.pt): ").strip()
             model = load_or_download_yolo_model(model_name)
@@ -64,7 +72,7 @@ def decide_download_model(user_choice):
             print("No model will be downloaded.")
             return None
         else:
-            print("Invalid input. Please enter 'y' or 'n'.")
+            print("Invalid input. Please enter 'y' or 'n'.\n")
 
 # function to find path image with dialog box
 def find_path_image():
@@ -97,18 +105,16 @@ def run_realtime_detection():
     print("\nLoading Detection Model...")
 
     #list the model in Yolo Model folder
-    model_dir = r'Yolo Model'
+    model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), r'Yolo Model')
+
     if os.path.exists(model_dir):
-        print("Available models in 'Yolo Model' directory:")
-        for file in os.listdir(model_dir):
-            if file.endswith('.pt'):
-                print(f"- {file}")
-        print()
 
         while True:
-            
-            # ask user to select the model from the list
-            model_name = input("Enter the YOLO model name to use (e.g., yolo12n.pt): ").strip() 
+            # use questionary to select the model from the list
+            model_name = questionary.select(
+                "Available models in 'Yolo Model', Select the YOLO model to use:",
+                choices=[file for file in os.listdir(model_dir) if file.endswith('.pt')]
+            ).ask()
             model_path = os.path.join(model_dir, model_name)
 
             if os.path.exists(model_path):
@@ -128,20 +134,28 @@ def run_realtime_detection():
 
     # initial image from file for test purpose
     # logic code to get image from user or use default image
-    choice_image = input("do you want to select an image file? (y/n): ").strip().lower()
+    while True:
 
-    if choice_image == 'n': # use default image
-        print("Using default image 'Sample_Car.jpg' for detection.")
+        choice_image = input("do you want to select an image file? (y/n): ").strip().lower()
 
-        # use absolute path for default image (resolve path issue when running another command line)
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        path__image = os.path.join(base_dir, r'Sample_Image\Sample_Car.jpg')
+        if choice_image == 'n': # use default image
+            print("Using default image 'Sample_Car.jpg' for detection.")
 
-        var_image = cv2.imread(path__image)
+            # use absolute path for default image (resolve path issue when running another command line)
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            path__image = os.path.join(base_dir, r'Sample_Image\Sample_Car.jpg')
 
-    else: # open dialog box to select image
-        print("Please select an image file for detection.")
-        var_image = cv2.imread(find_path_image())
+            var_image = cv2.imread(path__image)
+            break
+
+        elif choice_image == 'y': # open dialog box to select image
+            print("Please select an image file for detection.")
+            var_image = cv2.imread(find_path_image())
+            break
+
+        else:
+            print("Invalid input. Please enter 'y' or 'n'.")
+            continue
 
     # Check if image is loaded successfully
     if var_image is None:
@@ -158,7 +172,9 @@ def run_realtime_detection():
     # --- Process and Display Results ---
     for r in results:
         annotated_image = r.plot() # plot() returns the image as a numpy array with bounding boxes drawn
-        cv2.imshow("YOLO Detection", annotated_image)
+
+        cv2.imshow("YOLO Detection", annotated_image) # display the image with bounding box
+        cv2.setWindowProperty("YOLO Detection", cv2.WND_PROP_TOPMOST, 1) # bring window to front
 
         # Exit condition: Press any key to close the window
         if cv2.waitKey(0) & 0xFF == ord('q'):
@@ -189,16 +205,22 @@ def menu_test_model():
         if choice_user == '1':
             # check the model on Yolo Model folder and show the list of model
             print("\n Checking the model...\n")
-            model_dir = r'Yolo Model'
+
+            model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), r'Yolo Model')
+
+            bool_model_dir = False # initial boolean for check exist model in folder
+
             if os.path.exists(model_dir) and os.listdir(model_dir) != []:
+                bool_model_dir = True # model found in the folder
                 print("Available models in 'Yolo Model' directory:")
+
                 for file in os.listdir(model_dir):
                     if file.endswith('.pt'):
                         print(f"- {file}")
                 print()
 
-                # ask user to download another model or go back to menu
-                check_model = decide_download_model(input("Do you want to download another model? (y/n): ").strip().lower())
+                # ask user to download another model 
+                check_model = decide_download_model(bool_model_dir)
                 if check_model is None:
                     # ask user back to menu
                     choice_user = input("press 'b' to go back to menu or any other key to exit: ").strip().lower()
@@ -209,9 +231,8 @@ def menu_test_model():
                         exit()
 
             else:
-                
                 # no model found in the folder, ask user to download the model
-                check_model = decide_download_model(input("No models found. Do you want to download a model? (y/n): ").strip().lower())
+                check_model = decide_download_model(bool_model_dir)
                 if check_model is not None:
                     # ask user back to menu
                     choice_user = input("press 'b' to go back to menu or any other key to exit: ").strip().lower()
